@@ -1,0 +1,23 @@
+# @copyright (c) 2017, Shenzhen Forward Industry Co.Ltd. All Rights Reserved.
+# @author  huangjimin
+# @date 2017-09-26
+# @brief build infrastructure
+
+#
+# Make rules/targets for handling subdirectories
+
+.PHONY: ${subdirs}
+
+all:: ${subdirs}
+ifeq (@,$(Q))
+	@$(ECHO) "[$(target)] SUBDIR  $(LOCALDIR)/: ${subdirs} "
+endif
+
+${subdirs}::
+	$Q$(MAKE) -C $@ kernel_version=$(kernel_version) LINUX_MAKE_SHARED_LIB=${LINUX_MAKE_SHARED_LIB} SHAREDLIBVER=${SHAREDLIBVER}
+
+clean clean_d install distclean::
+ifeq (@,$(Q))
+	@$(ECHO) "[$(target)] $@    $(LOCALDIR)"
+endif
+	@(for name in $(subdirs); do $(MAKE) -C $$name $@; done)

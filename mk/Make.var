@@ -1,0 +1,5 @@
+# @copyright (c) 2017, Shenzhen Forward Industry Co.Ltd. All Rights Reserved.
+# @author  huangjimin
+# @date 2017-09-26
+# @brief build infrastructure
+DEBUG_SYMBOLS=TRUE

@@ -1,0 +1,32 @@
+# @copyright (c) 2017, Shenzhen Forward Industry Co.Ltd. All Rights Reserved.
+# @author  huangjimin
+# @date 2017-09-26
+# @brief build infrastructure
+
+#
+# Included from Make.config to define build targets, including
+# optional ones requested in CFGFLAGS in the platform Makefile.
+
+#
+# Driver Libraries
+#
+#   These are the required libraries to use the driver by itself,
+#   without diagnostics or tests, including the SAL core.
+#
+
+ifeq ($(LINUX_MAKE_SHARED_LIB),1)
+libext = so.$(SHAREDLIBVER)
+else
+libext = a
+endif
+
+BCM_LIB = libbcm.$(libext)
+
+COND_LIB_SAL_APPL=libsal_appl.$(libext)
+COND_LIB_SAL_APPL_PLATFORM=libsal_appl_plat.$(libext)
+SAL_LIBS = \
+        $(COND_LIB_SAL_APPL) \
+        $(COND_LIB_SAL_APPL_PLATFORM)
+
+SAL_LIBS_BLD=$(addprefix ${LIBDIR}/,${SAL_LIBS})
+

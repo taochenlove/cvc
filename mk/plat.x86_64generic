@@ -1,0 +1,27 @@
+# @copyright (c) 2017, Shenzhen Forward Industry Co.Ltd. All Rights Reserved.
+# @author  huangjimin
+# @date 2017-09-26
+# @brief build infrastructure
+# toolchain
+CC       = $(CROSS_COMPILE)gcc
+CXX      = $(CROSS_COMPILE)g++
+LD       = $(CROSS_COMPILE)ld
+AR       = $(CROSS_COMPILE)ar
+ARFLAGS  = -rc
+STRIP    = $(CROSS_COMPILE)strip
+RANLIB   = $(CROSS_COMPILE)ranlib
+
+CFGFLAGS += -DLINUX
+
+# endian compile flags
+ENDIAN_CFGFLAGS = -DLE_HOST=1 -DBE_HOST=0
+CFGFLAGS += $(ENDIAN_CFGFLAGS)
+
+
+
+ifeq (linuxkern,$(targetos))
+include ${SDK}/mk/plat.$(targetplat).linuxkern
+endif
+ifeq (linuxuser,$(targetos))
+include ${SDK}/mk/plat.$(targetplat).linuxuser
+endif

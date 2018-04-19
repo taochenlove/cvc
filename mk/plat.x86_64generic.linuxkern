@@ -1,0 +1,88 @@
+# @copyright (c) 2017, Shenzhen Forward Industry Co.Ltd. All Rights Reserved.
+# @author  huangjimin
+# @date 2017-09-26
+# @brief build infrastructure
+# Default kernel source directory
+ifeq (,$(LINUX_KDIR))
+LINUX_KDIR := /lib/modules/$(shell uname -r)/build
+$(info LINUX_KDIR=$(LINUX_KDIR))
+export LINUX_KDIR
+endif
+
+# Default Linux include directory
+ifeq (,$(LINUX_INCLUDE))
+LINUX_INCLUDE := $(LINUX_KDIR)/include
+endif
+# Default architecture
+ifeq (,$(ARCH))
+SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+                                  -e s/sun4u/sparc64/ \
+                                  -e s/arm.*/arm/ -e s/sa110/arm/ \
+                                  -e s/s390x/s390/ -e s/parisc64/parisc/ \
+                                  -e s/ppc.*/powerpc/ -e s/mips.*/mips/ \
+                                  -e s/sh[234].*/sh/ -e s/aarch64.*/arm64/ )
+ARCH ?= $(SUBARCH)
+endif
+
+# By default we exclude -Werror from x86 kernel builds
+CFGFLAGS += -Wall
+CFGFLAGS += -I$(SDK)/app/linuxkern/include 
+
+
+
+# Noisy kernel build
+KBUILD_VERBOSE = 1
+
+export ARCH KBUILD_VERBOSE LINUX_KDIR
+
+
+# autoconf.h was moved in later kernels
+AUTOCONF = $(LINUX_KDIR)/include/generated/autoconf.h
+ifeq (,$(shell ls $(AUTOCONF) 2>/dev/null))
+AUTOCONF = $(LINUX_KDIR)/include/linux/autoconf.h
+endif
+$(if ${BLDCONFIG},${BLDCONFIG}/)
+
+KCONFIG_H = $(LINUX_KDIR)/include/linux/kconfig.h
+ifeq (,$(shell ls $(KCONFIG_H) 2>/dev/null))
+KCONFIG_H = 
+endif
+
+# gcc system include path
+SYSINC = $(shell $(CC) -print-search-dirs | grep install | cut -c 10-)include
+
+ifeq (,$(KFLAGS))
+KFLAGS := -nostdinc -isystem $(SYSINC) \
+  -I$(LINUX_KDIR)/include \
+  -I$(LINUX_KDIR)/arch/$(ARCH)/include \
+  -I$(LINUX_KDIR)/arch/$(ARCH)/include/generated \
+  -I$(LINUX_KDIR)/arch/$(ARCH)/include/uapi \
+  -I$(LINUX_KDIR)/arch/$(ARCH)/include/generated/uapi \
+  -I$(LINUX_KDIR)/include/uapi \
+  -I$(LINUX_KDIR)/include/generated/uapi \
+  $(if $(AUTOCONF),-include $(AUTOCONF)) \
+  $(if ${KCONFIG_H}, -include $(KCONFIG_H)) \
+  -m64 -D__KERNEL__ -DMODULE\
+  -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common \
+  -maccumulate-outgoing-args -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 \
+  -fomit-frame-pointer \
+  -fno-stack-protector -Wdeclaration-after-statement -Wno-pointer-sign \
+  -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks \
+  -Os -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+  -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time 
+endif
+
+# Extra variables.
+EXTRA_CFLAGS = -D"KBUILD_STR(s)=\#s" $(basename_flags) $(modname_flags)
+
+comma = ,
+basetarget = $(basename $(notdir $@))
+modname = $(basetarget)
+
+name-fix = $(subst $(comma),_,$(subst -,_,$1))
+basename_flags = -D"KBUILD_BASENAME=KBUILD_STR($(call name-fix,$(basetarget)))"
+modname_flags  = $(if $(filter 1,$(words $(modname))),\
+-D"KBUILD_MODNAME=KBUILD_STR($(call name-fix,$(modname)))")
+
+STD_CFLAGS += $(KFLAGS)
+
